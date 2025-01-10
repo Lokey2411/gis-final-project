@@ -25,6 +25,10 @@
       "react-app/jest"
     ]
   },
+  "resolutions": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -36,5 +40,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }

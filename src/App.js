@@ -1,13 +1,13 @@
-import logo from './logo.svg';
 import './App.css';
-import MapApp from './component/MapApp';
+import MapComponent from './component/Map';
+import 'leaflet/dist/leaflet.css';
 
 function App() {
   return (
-    <div className="App">
-      <MapApp />
+    <div className="size-full">
+      <MapComponent/>
     </div>
-  );
+  )
 }
 
 export default App;
