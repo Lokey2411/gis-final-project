@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, use } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import L, { Icon } from 'leaflet';
-import 'leaflet-routing-machine';
+// import 'leaflet-routing-machine';
+require('leaflet-routing-machine');
 
 // Fix for default icon in Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
+// delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
@@ -13,18 +15,29 @@ L.Icon.Default.mergeOptions({
 });
 
 // Routing Component
-function Routing({ start, destination }) {
+function Routing({ start, destination, isFirstRender }) {
   const map = useMap();
   const routingControlRef = useRef(null);
+  // let control = null;
 
   useEffect(() => {
     if (!map || !start || !destination) return;
-
-    // Initialize the routing control
+    // Remove the existing routing control if it exists
+    // console.log(control);
+    // routingControlRef.current = control;
     if (routingControlRef.current) {
-      map.removeControl(routingControlRef.current);
+      console.log('removing routing control');
+      console.log('routing kiem tra kieu du lieu:', routingControlRef.current);
+      try {
+        routingControlRef.current.remove(); // Correctly remove the routing control
+      } catch (error) {
+        console.error('Failed to remove routing control:', error);
+      }
+    } else {
+      console.warn('Routing control reference was not a valid routing control instance.');
     }
-
+    routingControlRef.current = null;
+    // Create a new routing control
     routingControlRef.current = L.Routing.control({
       waypoints: [L.latLng(start), L.latLng(destination)],
       routeWhileDragging: true,
@@ -32,21 +45,27 @@ function Routing({ start, destination }) {
     }).addTo(map);
 
     return () => {
-      // Clean up routing control
-      if (routingControlRef.current) {
-        map.removeControl(routingControlRef.current);
-        routingControlRef.current = null;
+      if (routingControlRef.current instanceof L.Routing.Control) {
+        try {
+          routingControlRef.current.remove();
+        } catch (error) {
+          console.error('Error cleaning up routing control:', error);
+        }
+      } else {
+        console.warn('Routing control reference was not a valid instance during cleanup.');
       }
+      routingControlRef.current = null;
     };
-  }, [map, start, destination]);
+  }, [map, start, destination, isFirstRender]);
 
   return null;
 }
 
-function App() {
+function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
+  const [countFindRouting, setCountFindRouting] = useState(-1);
 
   const MarkerData = [
     {
@@ -89,7 +108,16 @@ function App() {
 
   const handlePopupClick = geocode => {
     setSelectedDestination(geocode);
+    // setIsFirstSearchRouting(false);
   };
+  useEffect(() => {
+    if (selectedDestination) {
+      setCountFindRouting(prev => prev + 1);
+    }
+  }, [selectedDestination]);
+  useEffect(() => {
+    console.log(countFindRouting, countFindRouting === 0);
+  }, [countFindRouting]);
 
   return (
     <div style={{ height: '100vh' }}>
@@ -108,7 +136,7 @@ function App() {
           {/* Render Markers from MarkerData */}
           {MarkerData.map((marker, index) => (
             <Marker key={index} position={marker.geocode} icon={customIcon}>
-              <Popup>
+              <Popup className="bg-white">
                 {marker.popup}
                 <br />
                 <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
@@ -125,4 +153,4 @@ function App() {
   );
 }
 
-export default App;
+export default Map;
