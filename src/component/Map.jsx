@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { Icon } from 'leaflet';
+import { useData } from './../hook/useData';
 
 // // Fix for default icon in Leaflet (if markers are missing icons)
 // delete L.Icon.Default.prototype._getIconUrl;
@@ -16,6 +17,7 @@ function App() {
   const [error, setError] = useState(null);
   const [distances, setDistances] = useState([]);
   // Marker Data
+  const { data } = useData('searchLand.php?ownerId=1');
   const MarkerData = [
     {
       geocode: [21.037013, 105.837505],
@@ -68,7 +70,14 @@ function App() {
       setError('Geolocation is not supported by your browser.');
     }
   }, []);
-
+  useEffect(() => {
+    if (data) {
+      // data geom:
+      const geomData = data.map(item => JSON.parse(item.geom));
+      console.log(geomData);
+    }
+  });
+  if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
   return (
     <div style={{ height: '100vh' }}>
       <h1>Show Location Random</h1>
