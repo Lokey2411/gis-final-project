@@ -74,7 +74,7 @@ function App() {
       <h1>Show Location Random</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {location ? (
-        <MapContainer center={location} zoom={13} style={{ height: '90vh', width: '100%' }}>
+        <MapContainer center={location} zoom={50} style={{ height: '90vh', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
