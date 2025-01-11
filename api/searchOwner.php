@@ -1,4 +1,3 @@
-<pre>
 <?php
 include "../config/api-header.php"; //allow cors
 require "../vendor/autoload.php";
@@ -21,7 +20,5 @@ $owner = searchOwner($pdo, $landId);
 
 // return owner
 http_response_code(200);
-echo json_encode($owner, JSON_PRETTY_PRINT); ?>
-</pre>
-<?php
+echo json_encode($owner, JSON_PRETTY_PRINT);
 exit;
