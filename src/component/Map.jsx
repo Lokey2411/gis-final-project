@@ -17,7 +17,7 @@ function App() {
   const [error, setError] = useState(null);
   const [distances, setDistances] = useState([]);
   // Marker Data
-  const { data } = useData('searchLand.php?ownerId=1');
+  const { data } = useData('searchLand.php');
   const MarkerData = [
     {
       geocode: [21.037013, 105.837505],
@@ -76,6 +76,7 @@ function App() {
       const geomData = data.map(item => JSON.parse(item.geom));
       console.log(geomData);
     }
+    console.log(data);
   });
   if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
   return (
