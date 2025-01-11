@@ -1,23 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L, { Icon } from 'leaflet';
-import { useData } from './../hook/useData';
+import 'leaflet-routing-machine';
 
-// // Fix for default icon in Leaflet (if markers are missing icons)
-// delete L.Icon.Default.prototype._getIconUrl;
-// L.Icon.Default.mergeOptions({
-//   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
-//   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
-//   shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
-// });
+// Fix for default icon in Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+});
+
+// Routing Component
+function Routing({ start, destination }) {
+  const map = useMap();
+  const routingControlRef = useRef(null);
+
+  useEffect(() => {
+    if (!map || !start || !destination) return;
+
+    // Initialize the routing control
+    if (routingControlRef.current) {
+      map.removeControl(routingControlRef.current);
+    }
+
+    routingControlRef.current = L.Routing.control({
+      waypoints: [L.latLng(start), L.latLng(destination)],
+      routeWhileDragging: true,
+      showAlternatives: false,
+    }).addTo(map);
+
+    return () => {
+      // Clean up routing control
+      if (routingControlRef.current) {
+        map.removeControl(routingControlRef.current);
+        routingControlRef.current = null;
+      }
+    };
+  }, [map, start, destination]);
+
+  return null;
+}
 
 function App() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
-  const [distances, setDistances] = useState([]);
-  // Marker Data
-  const { data } = useData('searchLand.php?ownerId=1');
+  const [selectedDestination, setSelectedDestination] = useState(null);
+
   const MarkerData = [
     {
       geocode: [21.037013, 105.837505],
@@ -45,21 +75,7 @@ function App() {
       navigator.geolocation.getCurrentPosition(
         position => {
           const { latitude, longitude } = position.coords;
-          const userLocation = [latitude, longitude];
-          setLocation(userLocation);
-
-          // Calculate distances to markers
-          const calculatedDistances = MarkerData.map(marker => {
-            const markerLatLng = L.latLng(marker.geocode[0], marker.geocode[1]);
-            const userLatLng = L.latLng(latitude, longitude);
-            const distance = userLatLng.distanceTo(markerLatLng); // in meters
-            return {
-              popup: marker.popup,
-              distance: (distance / 1000).toFixed(2), // Convert to kilometers
-              geocode: marker.geocode,
-            };
-          });
-          setDistances(calculatedDistances);
+          setLocation([latitude, longitude]);
         },
         err => {
           setError('Unable to retrieve your location');
@@ -70,20 +86,17 @@ function App() {
       setError('Geolocation is not supported by your browser.');
     }
   }, []);
-  useEffect(() => {
-    if (data) {
-      // data geom:
-      const geomData = data.map(item => JSON.parse(item.geom));
-      console.log(geomData);
-    }
-  });
-  if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
+
+  const handlePopupClick = geocode => {
+    setSelectedDestination(geocode);
+  };
+
   return (
     <div style={{ height: '100vh' }}>
-      <h1>Show Location Random</h1>
+      <h1>Interactive Routing Map</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {location ? (
-        <MapContainer center={location} zoom={50} style={{ height: '90vh', width: '100%' }}>
+        <MapContainer center={location} zoom={13} style={{ height: '90vh', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -98,14 +111,12 @@ function App() {
               <Popup>
                 {marker.popup}
                 <br />
-                Distance: {distances[index]?.distance} km
+                <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
               </Popup>
             </Marker>
           ))}
-          {/* Draw Paths */}
-          {distances.map((distance, index) => (
-            <Polyline key={index} positions={[location, distance.geocode]} color="blue" weight={3} />
-          ))}
+          {/* Add Routing */}
+          {selectedDestination && <Routing start={location} destination={selectedDestination} />}
         </MapContainer>
       ) : (
         <p>Fetching your location...</p>
