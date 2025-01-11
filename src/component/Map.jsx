@@ -72,7 +72,9 @@ function App() {
   }, []);
   useEffect(() => {
     if (data) {
-      console.log(data);
+      // data geom:
+      const geomData = data.map(item => JSON.parse(item.geom));
+      console.log(geomData);
     }
   });
   if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
