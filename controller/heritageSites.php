@@ -1,10 +1,10 @@
 <?php
 
-function searchLand($pdo)
+function heritageSites($pdo)
 {
     try {
 
-        $stmt = $pdo->prepare("SELECT *, ST_AsGeoJSON(geo) as geom FROM lands");
+        $stmt = $pdo->prepare("SELECT *, ST_AsGeoJSON(geo) as geom FROM heritage_sites");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {

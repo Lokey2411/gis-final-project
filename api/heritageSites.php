@@ -2,12 +2,12 @@
 include "../config/api-header.php"; // allow cors
 require "../vendor/autoload.php";
 require "../config/database.php";
-require "../controller/searchLand.php";
+require "../controller/heritageSites.php";
 
 $pdo = initDB();
 
 // get lands
-$lands = searchLand($pdo);
+$lands = heritageSites($pdo);
 
 // return lands with status 200
 http_response_code(200);
