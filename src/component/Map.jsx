@@ -1,15 +1,12 @@
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import L, { Icon } from 'leaflet';
-import useData from '../hook/useData';
-import { getEnv } from '../functions/getEnv';
-// import 'leaflet-routing-machine';
+import { useData } from './../hook/useData';
 require('leaflet-routing-machine');
 
-// Fix for default icon in Leaflet
-// delete L.Icon.Default.prototype._getIconUrl;
+// Fix for default Leaflet icons
 L.Icon.Default.mergeOptions({
   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
@@ -17,28 +14,18 @@ L.Icon.Default.mergeOptions({
 });
 
 // Routing Component
-function Routing({ start, destination, isFirstRender }) {
+function Routing({ start, destination }) {
   const map = useMap();
   const routingControlRef = useRef(null);
-  // let control = null;
 
   useEffect(() => {
     if (!map || !start || !destination) return;
-    // Remove the existing routing control if it exists
-    // console.log(control);
-    // routingControlRef.current = control;
+
+    // Remove existing routing control if it exists
     if (routingControlRef.current) {
-      console.log('removing routing control');
-      console.log('routing kiem tra kieu du lieu:', routingControlRef.current);
-      try {
-        routingControlRef.current.remove(); // Correctly remove the routing control
-      } catch (error) {
-        console.error('Failed to remove routing control:', error);
-      }
-    } else {
-      console.warn('Routing control reference was not a valid routing control instance.');
+      map.removeControl(routingControlRef.current); // Safely remove the routing control
     }
-    routingControlRef.current = null;
+
     // Create a new routing control
     routingControlRef.current = L.Routing.control({
       waypoints: [L.latLng(start), L.latLng(destination)],
@@ -46,44 +33,50 @@ function Routing({ start, destination, isFirstRender }) {
       showAlternatives: false,
     }).addTo(map);
 
+    // Cleanup on component unmount
     return () => {
-      if (routingControlRef.current instanceof L.Routing.Control) {
-        try {
-          routingControlRef.current.remove();
-        } catch (error) {
-          console.error('Error cleaning up routing control:', error);
-        }
-      } else {
-        console.warn('Routing control reference was not a valid instance during cleanup.');
+      if (routingControlRef.current) {
+        map.removeControl(routingControlRef.current); // Ensure proper cleanup
       }
-      routingControlRef.current = null;
     };
-  }, [map, start, destination, isFirstRender]);
+  }, [map, start, destination]);
 
   return null;
 }
+
+const DEFAULT_DATA = [
+  {
+    geocode: [21.037013, 105.837505],
+    popup: 'Dinh doc lap',
+  },
+  {
+    geocode: [21.036898, 105.834667],
+    popup: 'Lang chu tich',
+  },
+  {
+    geocode: [21.046449, 105.803348],
+    popup: 'TH TrueMilk Hoang Quoc Viet',
+  },
+];
 
 function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
-  const [countFindRouting, setCountFindRouting] = useState(-1);
+  const { data } = useData('heritageSites.php');
 
-  
-  const MarkerData = [
-    {
-      geocode: [21.037013, 105.837505],
-      popup: 'Dinh doc lap',
-    },
-    {
-      geocode: [21.036898, 105.834667],
-      popup: 'Lang chu tich',
-    },
-    {
-      geocode: [21.046449, 105.803348],
-      popup: 'TH TrueMilk Hoang Quoc Viet',
-    },
-  ];
+  const MarkerData = useMemo(() => {
+    if (data && data.length > 0) {
+      const markers = data.map(item => ({
+        geocode: JSON.parse(item.geom).coordinates.reverse(),
+        popup: item.name,
+      }));
+      console.log('MarkerData:', markers);
+      return markers;
+    }
+    console.log('Using default MarkerData:', DEFAULT_DATA);
+    return DEFAULT_DATA;
+  }, [data]);
 
   // Custom Icon
   const customIcon = new Icon({
@@ -91,7 +84,7 @@ function Map() {
     iconSize: [38, 38],
   });
 
-  // Get User Location
+  // Get user location
   useEffect(() => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -111,16 +104,7 @@ function Map() {
 
   const handlePopupClick = geocode => {
     setSelectedDestination(geocode);
-    // setIsFirstSearchRouting(false);
   };
-  useEffect(() => {
-    if (selectedDestination) {
-      setCountFindRouting(prev => prev + 1);
-    }
-  }, [selectedDestination]);
-  useEffect(() => {
-    console.log(countFindRouting, countFindRouting === 0);
-  }, [countFindRouting]);
 
   return (
     <div style={{ height: '100vh' }}>
@@ -137,15 +121,19 @@ function Map() {
             <Popup>You are here!</Popup>
           </Marker>
           {/* Render Markers from MarkerData */}
-          {MarkerData.map((marker, index) => (
-            <Marker key={index} position={marker.geocode} icon={customIcon}>
-              <Popup className="bg-white">
-                {marker.popup}
-                <br />
-                <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
-              </Popup>
-            </Marker>
-          ))}
+          {MarkerData && MarkerData.length > 0 ? (
+            MarkerData.map((marker, index) => (
+              <Marker key={index} position={marker.geocode} icon={customIcon}>
+                <Popup>
+                  {marker.popup}
+                  <br />
+                  <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
+                </Popup>
+              </Marker>
+            ))
+          ) : (
+            <p>No marker data available</p>
+          )}
           {/* Add Routing */}
           {selectedDestination && <Routing start={location} destination={selectedDestination} />}
         </MapContainer>
