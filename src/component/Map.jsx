@@ -110,6 +110,7 @@ function Map() {
     setWatchingDetailItem(item);
   };
   const filteredMarkers = useMemo(() => {
+    // ""
     return searchQuery
       ? MarkerData.filter(marker => marker.popup.toLowerCase().includes(searchQuery.toLowerCase()))
       : [];
