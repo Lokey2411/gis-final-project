@@ -1,24 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import React, { useState, useEffect, useRef, use } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import L, { Icon } from 'leaflet';
-import { useData } from './../hook/useData';
+import useData from '../hook/useData';
+import { getEnv } from '../functions/getEnv';
+// import 'leaflet-routing-machine';
+require('leaflet-routing-machine');
 
-// // Fix for default icon in Leaflet (if markers are missing icons)
+// Fix for default icon in Leaflet
 // delete L.Icon.Default.prototype._getIconUrl;
-// L.Icon.Default.mergeOptions({
-//   iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
-//   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
-//   shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
-// });
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+});
 
-function App() {
+// Routing Component
+function Routing({ start, destination, isFirstRender }) {
+  const map = useMap();
+  const routingControlRef = useRef(null);
+  // let control = null;
+
+  useEffect(() => {
+    if (!map || !start || !destination) return;
+    // Remove the existing routing control if it exists
+    // console.log(control);
+    // routingControlRef.current = control;
+    if (routingControlRef.current) {
+      console.log('removing routing control');
+      console.log('routing kiem tra kieu du lieu:', routingControlRef.current);
+      try {
+        routingControlRef.current.remove(); // Correctly remove the routing control
+      } catch (error) {
+        console.error('Failed to remove routing control:', error);
+      }
+    } else {
+      console.warn('Routing control reference was not a valid routing control instance.');
+    }
+    routingControlRef.current = null;
+    // Create a new routing control
+    routingControlRef.current = L.Routing.control({
+      waypoints: [L.latLng(start), L.latLng(destination)],
+      routeWhileDragging: true,
+      showAlternatives: false,
+    }).addTo(map);
+
+    return () => {
+      if (routingControlRef.current instanceof L.Routing.Control) {
+        try {
+          routingControlRef.current.remove();
+        } catch (error) {
+          console.error('Error cleaning up routing control:', error);
+        }
+      } else {
+        console.warn('Routing control reference was not a valid instance during cleanup.');
+      }
+      routingControlRef.current = null;
+    };
+  }, [map, start, destination, isFirstRender]);
+
+  return null;
+}
+
+function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
-  const [distances, setDistances] = useState([]);
-  // Marker Data
-  const { data } = useData('searchLand.php');
-  const [MarkerData, setMarkerData] = useState(data);
+  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [countFindRouting, setCountFindRouting] = useState(-1);
+
+  
+  const MarkerData = [
+    {
+      geocode: [21.037013, 105.837505],
+      popup: 'Dinh doc lap',
+    },
+    {
+      geocode: [21.036898, 105.834667],
+      popup: 'Lang chu tich',
+    },
+    {
+      geocode: [21.046449, 105.803348],
+      popup: 'TH TrueMilk Hoang Quoc Viet',
+    },
+  ];
 
   // Custom Icon
   const customIcon = new Icon({
@@ -32,8 +97,7 @@ function App() {
       navigator.geolocation.getCurrentPosition(
         position => {
           const { latitude, longitude } = position.coords;
-          const userLocation = [latitude, longitude];
-          setLocation(userLocation);
+          setLocation([latitude, longitude]);
         },
         err => {
           setError('Unable to retrieve your location');
@@ -44,24 +108,26 @@ function App() {
       setError('Geolocation is not supported by your browser.');
     }
   }, []);
-  useEffect(() => {
-    if (data) {
-      // data geom:
-      const geomData = data.map(item => JSON.parse(item.geom));
-      console.log(geomData);
-      setMarkerData(data);
-    }
-    console.log(MarkerData);
 
-    console.log(data);
-  });
-  // if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
+  const handlePopupClick = geocode => {
+    setSelectedDestination(geocode);
+    // setIsFirstSearchRouting(false);
+  };
+  useEffect(() => {
+    if (selectedDestination) {
+      setCountFindRouting(prev => prev + 1);
+    }
+  }, [selectedDestination]);
+  useEffect(() => {
+    console.log(countFindRouting, countFindRouting === 0);
+  }, [countFindRouting]);
+
   return (
     <div style={{ height: '100vh' }}>
-      <h1>Show Location Random</h1>
+      <h1>Interactive Routing Map</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {location ? (
-        <MapContainer center={location} zoom={13} style={{ height: '90vh', width: '100%' }}>
+        <MapContainer center={location} zoom={13} style={{ height: '90vh', width: '80%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -73,17 +139,15 @@ function App() {
           {/* Render Markers from MarkerData */}
           {MarkerData.map((marker, index) => (
             <Marker key={index} position={marker.geocode} icon={customIcon}>
-              <Popup>
+              <Popup className="bg-white">
                 {marker.popup}
                 <br />
-                Distance: {distances[index]?.distance} km
+                <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
               </Popup>
             </Marker>
           ))}
-          {/* Draw Paths */}
-          {distances.map((distance, index) => (
-            <Polyline key={index} positions={[location, distance.geocode]} color="blue" weight={3} />
-          ))}
+          {/* Add Routing */}
+          {selectedDestination && <Routing start={location} destination={selectedDestination} />}
         </MapContainer>
       ) : (
         <p>Fetching your location...</p>
@@ -92,4 +156,4 @@ function App() {
   );
 }
 
-export default App;
+export default Map;

@@ -10,6 +10,8 @@ export const useData = url => {
       try {
         const data = await getData(url);
         setData(data);
+        console.log(data);
+        
         setLoading(false);
       } catch (error) {
         setError(error);
