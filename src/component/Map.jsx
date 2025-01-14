@@ -87,7 +87,10 @@ function Map() {
     iconUrl: require('../Assets/pin.png'),
     iconSize: [38, 38],
   });
-
+  const YourLocationIcon = new Icon({
+    iconUrl: require('../Assets/location-pin-svgrepo-com.png'),
+    iconSize: [38, 38],
+  });
   // Get user location
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -110,14 +113,17 @@ function Map() {
     setWatchingDetailItem(item);
   };
   const filteredMarkers = useMemo(() => {
-    return MarkerData.filter(marker => marker.popup.toLowerCase().includes(searchQuery.toLowerCase()));
+    // ""
+    return searchQuery
+      ? MarkerData.filter(marker => marker.popup.toLowerCase().includes(searchQuery.toLowerCase()))
+      : [];
   }, [MarkerData, searchQuery]);
   return (
-    <div>
-      <div className="flex justify-center my-4">
-        <h1 className="text-3xl ">Heritages Location</h1>
+    <div className="bg-slate-600">
+      <div className="flex justify-center py-4 bg-slate-600">
+        <h1 className="text-5xl text-orange-400 font-bold ">Heritages Location</h1>
       </div>
-      <div className="flex justify-between">
+      <div className="flex justify-between mt-6 gap-3">
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {location ? (
           <MapContainer
@@ -131,7 +137,7 @@ function Map() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             {/* User Location Marker */}
-            <Marker position={location} icon={customIcon}>
+            <Marker position={location} icon={YourLocationIcon}>
               <Popup>You are here!</Popup>
             </Marker>
             {/* Render Markers from MarkerData */}
@@ -158,7 +164,7 @@ function Map() {
         )}
         <div className="flex-1 h-screen">
           <div className=" flex justify-center h-fit gap-2 items-center">
-            <label htmlFor="">Location : </label>
+            <label className='text-orange-500 text-2xl' htmlFor="">Location : </label>
             <input
               className="border border-orange-700 rounded-md shadow-md p-1"
               type="text"
@@ -185,7 +191,7 @@ function Map() {
               ))}
             </div>
           ) : watchingDetailItem && watchingDetailItem.name ? (
-            <div className="size-full m-6 border overflow-auto p-3">
+            <div className="size-full p-6 border overflow-auto mt-4 h-auto animate-toLeft text-white">
               <h1 className="text-2xl text-center font-bold">{watchingDetailItem.name}</h1>
               <p>{watchingDetailItem.description}</p>
               <p>
@@ -196,10 +202,16 @@ function Map() {
               <a href={watchingDetailItem.details_url}>Xem chi tiết</a>
             </div>
           ) : (
-            <div className="size-full m-6 border overflow-auto p-3">
-              <h1 className="text-2xl text-center font-bold">No Data</h1>
-            </div>
+            <p className='text-center my-5 font-bold'>NO data</p>
           )}
+          <div className='flex justify-center'>
+            <button
+              className="border border-orange-700 rounded-md shadow-md p-1 bg-orange-500 hover:animate-bounce mt-3"
+              onClick={() => setCenter([])}
+            >
+              Check your location
+            </button>
+          </div>
         </div>
       </div>
     </div>

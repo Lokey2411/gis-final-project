@@ -10,9 +10,12 @@ module.exports = {
         toLeft: {
           from: {
             transform: 'translateX(100%)',
+            opacity: 0,
           },
+
           to: {
-            transform: 'translateX(auto)',
+            transform: 'translateX(0)',
+            opacity: 1,
           },
         },
       },
