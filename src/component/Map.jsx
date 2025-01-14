@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import L, { Icon, marker } from 'leaflet';
+import L, { Icon, map, marker } from 'leaflet';
 import { useData } from './../hook/useData';
 require('leaflet-routing-machine');
 
@@ -62,13 +62,16 @@ const DEFAULT_DATA = [
 function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
+  const [center, setCenter] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [watchingDetailItem, setWatchingDetailItem] = useState({});
   const { data } = useData('heritageSites.php');
 
   const MarkerData = useMemo(() => {
     if (data && data.length > 0) {
       const markers = data.map(item => ({
+        ...item,
         geocode: JSON.parse(item.geom).coordinates.reverse(),
         popup: item.name,
       }));
@@ -103,8 +106,8 @@ function Map() {
     }
   }, []);
 
-  const handlePopupClick = geocode => {
-    setSelectedDestination(geocode);
+  const handlePopupClick = item => {
+    setWatchingDetailItem(item);
   };
   const filteredMarkers = useMemo(() => {
     return MarkerData.filter(marker => marker.popup.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -117,7 +120,12 @@ function Map() {
       <div className="flex justify-between">
         {error && <p style={{ color: 'red' }}>{error}</p>}
         {location ? (
-          <MapContainer center={location} zoom={13} className="w-1/2 h-screen">
+          <MapContainer
+            center={center && center.length > 0 ? center : location}
+            zoom={13}
+            className="flex-1 h-screen"
+            key={center.toString()}
+          >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -133,7 +141,7 @@ function Map() {
                   <Popup>
                     {marker.popup}
                     <br />
-                    <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
+                    <button onClick={() => handlePopupClick(marker)}>Find Route</button>
                   </Popup>
                 </Marker>
               ))
@@ -141,21 +149,56 @@ function Map() {
               <p>No marker data available</p>
             )}
             {/* Add Routing */}
-            {selectedDestination && <Routing start={location} destination={selectedDestination} />}
+            {watchingDetailItem && watchingDetailItem.geocode && (
+              <Routing start={location} destination={watchingDetailItem.geocode} />
+            )}
           </MapContainer>
         ) : (
           <p>Fetching your location...</p>
         )}
-        <div className="w-1/2 flex justify-center h-fit gap-2 items-center">
-          <label htmlFor="">Location : </label>
-          <input
-            className="border border-orange-700 rounded-md shadow-md p-1"
-            type="text"
-            id="search"
-            placeholder="Enter Location"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
+        <div className="flex-1 h-screen">
+          <div className=" flex justify-center h-fit gap-2 items-center">
+            <label htmlFor="">Location : </label>
+            <input
+              className="border border-orange-700 rounded-md shadow-md p-1"
+              type="text"
+              id="search"
+              placeholder="Enter Location"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          {searchQuery ? (
+            <div className="grid grid-cols-3 gap-6 max-h-full overflow-auto border border-orange-700 p-3 mt-4 mx-6 rounded-md">
+              {filteredMarkers.map((item, index) => (
+                <div
+                  key={index}
+                  className="rounded-md px-2 py-3 bg-gray-500 w-full cursor-pointer select-none text-white"
+                  onClick={() => {
+                    setCenter(item.geocode);
+                    setSearchQuery('');
+                    setWatchingDetailItem(item);
+                  }}
+                >
+                  {item.popup}
+                </div>
+              ))}
+            </div>
+          ) : (
+            watchingDetailItem &&
+            watchingDetailItem.name && (
+              <div className="size-full m-6 border overflow-auto p-3">
+                <h1 className="text-2xl text-center font-bold">{watchingDetailItem.name}</h1>
+                <p>{watchingDetailItem.description}</p>
+                <p>
+                  <b>Vé vào cửa: </b>
+                  {watchingDetailItem.ticket_price}
+                </p>
+                <p>Được công nhận là di sản văn hóa vào năm {watchingDetailItem.year}</p>
+                <a href={watchingDetailItem.details_url}>Xem chi tiết</a>
+              </div>
+            )
+          )}
         </div>
       </div>
     </div>
