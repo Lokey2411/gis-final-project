@@ -168,7 +168,7 @@ function Map() {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          {searchQuery ? (
+          {filteredMarkers.length > 0 ? (
             <div className="grid grid-cols-3 gap-6 max-h-full overflow-auto border border-orange-700 p-3 mt-4 mx-6 rounded-md">
               {filteredMarkers.map((item, index) => (
                 <div
@@ -184,20 +184,21 @@ function Map() {
                 </div>
               ))}
             </div>
+          ) : watchingDetailItem && watchingDetailItem.name ? (
+            <div className="size-full m-6 border overflow-auto p-3">
+              <h1 className="text-2xl text-center font-bold">{watchingDetailItem.name}</h1>
+              <p>{watchingDetailItem.description}</p>
+              <p>
+                <b>Vé vào cửa: </b>
+                {watchingDetailItem.ticket_price}
+              </p>
+              <p>Được công nhận là di sản văn hóa vào năm {watchingDetailItem.year}</p>
+              <a href={watchingDetailItem.details_url}>Xem chi tiết</a>
+            </div>
           ) : (
-            watchingDetailItem &&
-            watchingDetailItem.name && (
-              <div className="size-full m-6 border overflow-auto p-3">
-                <h1 className="text-2xl text-center font-bold">{watchingDetailItem.name}</h1>
-                <p>{watchingDetailItem.description}</p>
-                <p>
-                  <b>Vé vào cửa: </b>
-                  {watchingDetailItem.ticket_price}
-                </p>
-                <p>Được công nhận là di sản văn hóa vào năm {watchingDetailItem.year}</p>
-                <a href={watchingDetailItem.details_url}>Xem chi tiết</a>
-              </div>
-            )
+            <div className="size-full m-6 border overflow-auto p-3">
+              <h1 className="text-2xl text-center font-bold">No Data</h1>
+            </div>
           )}
         </div>
       </div>
