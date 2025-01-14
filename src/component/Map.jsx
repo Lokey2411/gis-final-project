@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import L, { Icon } from 'leaflet';
+import L, { Icon, marker } from 'leaflet';
 import { useData } from './../hook/useData';
 require('leaflet-routing-machine');
 
@@ -63,6 +63,7 @@ function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { data } = useData('heritageSites.php');
 
   const MarkerData = useMemo(() => {
@@ -105,41 +106,58 @@ function Map() {
   const handlePopupClick = geocode => {
     setSelectedDestination(geocode);
   };
-
+  const filteredMarkers = useMemo(() => {
+    return MarkerData.filter(marker => marker.popup.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [MarkerData, searchQuery]);
   return (
-    <div style={{ height: '100vh' }}>
-      <h1>Interactive Routing Map</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {location ? (
-        <MapContainer center={location} zoom={13} style={{ height: '90vh', width: '80%' }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    <div>
+      <div className="flex justify-center my-4">
+        <h1 className="text-3xl ">Heritages Location</h1>
+      </div>
+      <div className="flex justify-between">
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {location ? (
+          <MapContainer center={location} zoom={13} className="w-1/2 h-screen">
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {/* User Location Marker */}
+            <Marker position={location} icon={customIcon}>
+              <Popup>You are here!</Popup>
+            </Marker>
+            {/* Render Markers from MarkerData */}
+            {MarkerData && MarkerData.length > 0 ? (
+              MarkerData.map((marker, index) => (
+                <Marker key={index} position={marker.geocode} icon={customIcon}>
+                  <Popup>
+                    {marker.popup}
+                    <br />
+                    <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
+                  </Popup>
+                </Marker>
+              ))
+            ) : (
+              <p>No marker data available</p>
+            )}
+            {/* Add Routing */}
+            {selectedDestination && <Routing start={location} destination={selectedDestination} />}
+          </MapContainer>
+        ) : (
+          <p>Fetching your location...</p>
+        )}
+        <div className="w-1/2 flex justify-center h-fit gap-2 items-center">
+          <label htmlFor="">Location : </label>
+          <input
+            className="border border-orange-700 rounded-md shadow-md p-1"
+            type="text"
+            id="search"
+            placeholder="Enter Location"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
           />
-          {/* User Location Marker */}
-          <Marker position={location} icon={customIcon}>
-            <Popup>You are here!</Popup>
-          </Marker>
-          {/* Render Markers from MarkerData */}
-          {MarkerData && MarkerData.length > 0 ? (
-            MarkerData.map((marker, index) => (
-              <Marker key={index} position={marker.geocode} icon={customIcon}>
-                <Popup>
-                  {marker.popup}
-                  <br />
-                  <button onClick={() => handlePopupClick(marker.geocode)}>Find Route</button>
-                </Popup>
-              </Marker>
-            ))
-          ) : (
-            <p>No marker data available</p>
-          )}
-          {/* Add Routing */}
-          {selectedDestination && <Routing start={location} destination={selectedDestination} />}
-        </MapContainer>
-      ) : (
-        <p>Fetching your location...</p>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
