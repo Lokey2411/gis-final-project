@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import L, { Icon, map, marker } from 'leaflet';
+import L, { Icon } from 'leaflet';
 import { useData } from './../hook/useData';
 require('leaflet-routing-machine');
 
@@ -63,7 +63,6 @@ function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
   const [center, setCenter] = useState([]);
-  const [selectedDestination, setSelectedDestination] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [watchingDetailItem, setWatchingDetailItem] = useState({});
   const { data } = useData('heritageSites.php');
@@ -121,7 +120,7 @@ function Map() {
   return (
     <div className="bg-slate-600">
       <div className="flex justify-center py-4 bg-slate-600">
-        <h1 className="text-5xl text-orange-400 font-bold ">Heritages Location</h1>
+        <h1 className="text-5xl text-orange-400 font-bold animate-landIn">Di tích lịch sử tại Hà Nội</h1>
       </div>
       <div className="flex justify-between mt-6 gap-3">
         {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -129,7 +128,7 @@ function Map() {
           <MapContainer
             center={center && center.length > 0 ? center : location}
             zoom={13}
-            className="flex-1 h-screen"
+            className="flex-1 h-screen animate-toRight"
             key={center.toString()}
           >
             <TileLayer
@@ -147,12 +146,12 @@ function Map() {
                   <Popup>
                     {marker.popup}
                     <br />
-                    <button onClick={() => handlePopupClick(marker)}>Find Route</button>
+                    <button onClick={() => handlePopupClick(marker)}>Tìm đường đi tới đây</button>
                   </Popup>
                 </Marker>
               ))
             ) : (
-              <p>No marker data available</p>
+              <p>Không thể tải dữ liệu</p>
             )}
             {/* Add Routing */}
             {watchingDetailItem && watchingDetailItem.geocode && (
@@ -160,11 +159,13 @@ function Map() {
             )}
           </MapContainer>
         ) : (
-          <p>Fetching your location...</p>
+          <p>Đang tìm kiếm vị trí của bạn</p>
         )}
-        <div className="flex-1 h-screen">
+        <div className="flex-1 h-screen animate-toLeft">
           <div className=" flex justify-center h-fit gap-2 items-center">
-            <label className='text-orange-500 text-2xl' htmlFor="">Location : </label>
+            <label className="text-orange-500 text-2xl" htmlFor="">
+              Tìm kiếm di tích :{' '}
+            </label>
             <input
               className="border border-orange-700 rounded-md shadow-md p-1"
               type="text"
@@ -202,14 +203,14 @@ function Map() {
               <a href={watchingDetailItem.details_url}>Xem chi tiết</a>
             </div>
           ) : (
-            <p className='text-center my-5 font-bold'>NO data</p>
+            <p className="text-center my-5 font-bold">Không tìm thấy di tích muốn tìm kiếm</p>
           )}
-          <div className='flex justify-center'>
+          <div className="flex justify-center">
             <button
               className="border border-orange-700 rounded-md shadow-md p-1 bg-orange-500 hover:animate-bounce mt-3"
               onClick={() => setCenter([])}
             >
-              Check your location
+              Tìm vị trí của bạn
             </button>
           </div>
         </div>
