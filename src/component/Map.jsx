@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import L, { Icon } from 'leaflet';
 // import 'leaflet-routing-machine';
+import { useData } from './../hook/useData';
 require('leaflet-routing-machine');
 
 // Fix for default icon in Leaflet
@@ -61,26 +62,36 @@ function Routing({ start, destination, isFirstRender }) {
   return null;
 }
 
+const DEFAULT_DATA = [
+  {
+    geocode: [21.037013, 105.837505],
+    popup: 'Dinh doc lap',
+  },
+  {
+    geocode: [21.036898, 105.834667],
+    popup: 'Lang chu tich',
+  },
+  {
+    geocode: [21.046449, 105.803348],
+    popup: 'TH TrueMilk Hoang Quoc Viet',
+  },
+];
+
 function Map() {
   const [location, setLocation] = useState(null);
   const [error, setError] = useState(null);
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [countFindRouting, setCountFindRouting] = useState(-1);
-
-  const MarkerData = [
-    {
-      geocode: [21.037013, 105.837505],
-      popup: 'Dinh doc lap',
-    },
-    {
-      geocode: [21.036898, 105.834667],
-      popup: 'Lang chu tich',
-    },
-    {
-      geocode: [21.046449, 105.803348],
-      popup: 'TH TrueMilk Hoang Quoc Viet',
-    },
-  ];
+  const { data } = useData('heritageSites.php');
+  const MarkerData = useMemo(() => {
+    if (data && data.length > 0) {
+      return data.map(item => ({
+        geocode: JSON.parse(item.geom).coordinates,
+        popup: item.name,
+      }));
+    }
+    return DEFAULT_DATA;
+  }, [data]);
 
   // Custom Icon
   const customIcon = new Icon({
