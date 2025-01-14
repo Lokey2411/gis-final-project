@@ -18,20 +18,7 @@ function App() {
   const [distances, setDistances] = useState([]);
   // Marker Data
   const { data } = useData('searchLand.php');
-  const MarkerData = [
-    {
-      geocode: [21.037013, 105.837505],
-      popup: 'Dinh doc lap',
-    },
-    {
-      geocode: [21.036898, 105.834667],
-      popup: 'Lang chu tich',
-    },
-    {
-      geocode: [21.046449, 105.803348],
-      popup: 'TH TrueMilk Hoang Quoc Viet',
-    },
-  ];
+  const [MarkerData, setMarkerData] = useState(data);
 
   // Custom Icon
   const customIcon = new Icon({
@@ -47,19 +34,6 @@ function App() {
           const { latitude, longitude } = position.coords;
           const userLocation = [latitude, longitude];
           setLocation(userLocation);
-
-          // Calculate distances to markers
-          const calculatedDistances = MarkerData.map(marker => {
-            const markerLatLng = L.latLng(marker.geocode[0], marker.geocode[1]);
-            const userLatLng = L.latLng(latitude, longitude);
-            const distance = userLatLng.distanceTo(markerLatLng); // in meters
-            return {
-              popup: marker.popup,
-              distance: (distance / 1000).toFixed(2), // Convert to kilometers
-              geocode: marker.geocode,
-            };
-          });
-          setDistances(calculatedDistances);
         },
         err => {
           setError('Unable to retrieve your location');
@@ -75,10 +49,13 @@ function App() {
       // data geom:
       const geomData = data.map(item => JSON.parse(item.geom));
       console.log(geomData);
+      setMarkerData(data);
     }
+    console.log(MarkerData);
+
     console.log(data);
   });
-  if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
+  // if (!data) return <h1 className="absolute inset-0 grid place-items-center">Loading ...</h1>;
   return (
     <div style={{ height: '100vh' }}>
       <h1>Show Location Random</h1>
