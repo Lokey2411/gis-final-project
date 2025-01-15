@@ -118,7 +118,7 @@ function Map() {
       : [];
   }, [MarkerData, searchQuery]);
   return (
-    <div className="bg-slate-600">
+    <div className="bg-slate-600 h-screen">
       <div className="flex justify-center py-4 bg-slate-600">
         <h1 className="text-5xl text-orange-400 font-bold animate-landIn">Di tích lịch sử tại Hà Nội</h1>
       </div>
@@ -128,7 +128,7 @@ function Map() {
           <MapContainer
             center={center && center.length > 0 ? center : location}
             zoom={13}
-            className="flex-1 h-screen animate-toRight"
+            className="flex-1 h-[80vh] animate-toRight"
             key={center.toString()}
           >
             <TileLayer
@@ -161,7 +161,7 @@ function Map() {
         ) : (
           <p>Đang tìm kiếm vị trí của bạn</p>
         )}
-        <div className="flex-1 h-screen animate-toLeft">
+        <div className="flex-1 h-[80vh] animate-toLeft flex flex-col gap-4">
           <div className=" flex justify-center h-fit gap-2 items-center">
             <label className="text-orange-500 text-2xl" htmlFor="">
               Tìm kiếm di tích :{' '}
@@ -176,7 +176,7 @@ function Map() {
             />
           </div>
           {filteredMarkers.length > 0 ? (
-            <div className="grid grid-cols-3 gap-6 max-h-full overflow-auto border border-orange-700 p-3 mt-4 mx-6 rounded-md">
+            <div className="grid grid-cols-3 gap-6 flex-1 overflow-auto border border-orange-700 p-3  mx-6 rounded-md">
               {filteredMarkers.map((item, index) => (
                 <div
                   key={index}
